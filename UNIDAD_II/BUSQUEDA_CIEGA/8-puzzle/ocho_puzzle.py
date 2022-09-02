@@ -1,3 +1,4 @@
+import math
 from nodo import nodo_estado
 from collections import deque
 
@@ -405,9 +406,9 @@ class ocho_puzzle:
             else:
                 self.descubiertos.append(estado)
 
-    def algoritmo_beam(self):
+    def algoritmo_beam(self, b_fijo, b_porcentaje):
         iteracion = 1
-        b = 2
+        b = b_fijo
         self.estado_actual = self.estado_inicial
         self.descubiertos.append(self.estado_actual)
         movimientos = ["UP", "DOWN", "LEFT", "RIGHT"]
@@ -431,6 +432,8 @@ class ocho_puzzle:
                         break
                 
             sucesores.sort(key=ordenar_por_heuristica)
+            if b_fijo is None:
+                b = math.ceil(sucesores.__len__()*b_porcentaje)
             self.add_beam(sucesores, b)
             sucesores.clear()
                 
