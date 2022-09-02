@@ -1,12 +1,16 @@
 from nodo import nodo_estado
 from collections import deque
 
+def ordenar_por_heuristica(e):
+    return e.get_distancia()
+
 class ocho_puzzle:
 
     estado_final = [nodo_estado("12345678H", None, "Final", None)]
 
     def __init__(self, EI):
         self.estado_inicial = nodo_estado(EI, None, "Inicial", 0)
+        self.calcular_heuristica(self.estado_inicial)
         self.estado_actual = None
         self.descubiertos = []
         self.por_explorar = deque()
@@ -252,6 +256,201 @@ class ocho_puzzle:
         # Mostrar la Solucion
         self.buscar_padres(self.estado_actual)
         print("\nResumen Algoritmo por Profundidad\n")
+        print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
+        print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
+        print(f"Iteración : {iteracion}\n")
+
+
+    def espacios_desubicados(self, actual, objetivo):
+        d = 0
+        for i in range(len(actual.get_valor())):
+            if not actual.get_valor()[i] == objetivo.get_valor()[i]:
+                d += 1
+        return d
+
+    def calcular_heuristica(self, estado):
+        primero = True
+        for final in self.estado_final:
+            if primero:
+                distancia = self.espacios_desubicados(estado, final)
+                primero = False
+            else:
+                nueva_distancia = self.espacios_desubicados(estado, final)
+
+                if nueva_distancia < distancia:
+                    distancia = nueva_distancia
+        estado.set_distancia(distancia)
+
+    
+    def algoritmo_better_first(self):
+        iteracion = 1
+        self.estado_actual = self.estado_inicial
+        self.descubiertos.append(self.estado_actual)
+        movimientos = ["UP", "DOWN", "LEFT", "RIGHT"]
+        #movimientos = ["DOWN", "RIGHT", "UP", "LEFT"]
+        #movimientos = ["DOWN","UP", "RIGHT","LEFT"]
+
+        sucesores = []
+        solucion = None
+
+        while not self.es_final():
+            print(f"Iteración : {iteracion}\n")
+            self.mostrar_estado_actual()
+
+            for movimiento in movimientos:
+                estado_temporal = nodo_estado(self.mover_a(movimiento), self.estado_actual, "Mover a " + movimiento, self.estado_actual.get_nivel() + 1)
+                if not estado_temporal.get_valor() == "illegal" and not self.esta_descubierto(estado_temporal):
+                    self.calcular_heuristica(estado_temporal)
+                    sucesores.append(estado_temporal)
+                    if estado_temporal in self.estado_final:
+                        solucion = estado_temporal
+                        break
+                
+            # Paso de intercambio para quedar al frente de la cola
+            sucesores.sort(key=ordenar_por_heuristica)
+            self.add_profundidad(sucesores)
+                
+            print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
+            print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
+            
+
+            #Paso al siguiente estado
+            if solucion is None:
+                self.estado_actual = self.por_explorar.popleft()
+            else:
+                self.estado_actual = solucion
+            iteracion += 1
+
+        # Mostrar el último estado explorado
+        print(f"Iteración : {iteracion}\n")
+        self.mostrar_estado_actual()
+
+        # Mostrar la Solucion
+        self.buscar_padres(self.estado_actual)
+        print("\nResumen Algoritmo Better First\n")
+        print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
+        print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
+        print(f"Iteración : {iteracion}\n")
+
+  
+    def algoritmo_hill_climbing(self):
+        iteracion = 1
+        self.estado_actual = self.estado_inicial
+        self.descubiertos.append(self.estado_actual)
+        movimientos = ["UP", "DOWN", "LEFT", "RIGHT"]
+        #movimientos = ["DOWN", "RIGHT", "UP", "LEFT"]
+        #movimientos = ["DOWN","UP", "RIGHT","LEFT"]
+
+        sucesores = []
+        solucion = None
+
+        while not self.es_final():
+            print(f"Iteración : {iteracion}\n")
+            self.mostrar_estado_actual()
+
+            for movimiento in movimientos:
+                estado_temporal = nodo_estado(self.mover_a(movimiento), self.estado_actual, "Mover a " + movimiento, self.estado_actual.get_nivel() + 1)
+                if not estado_temporal.get_valor() == "illegal" and not self.esta_descubierto(estado_temporal):
+                    self.calcular_heuristica(estado_temporal)
+                    sucesores.append(estado_temporal)
+                    if estado_temporal in self.estado_final:
+                        solucion = estado_temporal
+                        break
+                
+            # Paso de intercambio para quedar al frente de la cola
+            sucesores.sort(key=ordenar_por_heuristica)
+            self.add_profundidad(sucesores)
+                
+            print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
+            print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
+            
+            estado_anterior = self.estado_actual
+            #Paso al siguiente estado
+            if solucion is None:
+                self.estado_actual = self.por_explorar.popleft()
+            else:
+                self.estado_actual = solucion
+
+            if estado_anterior.get_distancia() < self.estado_actual.get_distancia():
+                # este es el caso donde el algoritmo interrumpe la búsqueda.
+                # Mostrar la Solucion
+                print("\nResumen Algoritmo Better First\n")
+                print("\nNO HAY SOLUCION!!!\n")
+                print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
+                print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
+                print(f"Iteración : {iteracion}\n")
+                termina_bien = False
+                break
+
+            iteracion += 1
+
+        if termina_bien:
+            # Mostrar el último estado explorado
+            print(f"Iteración : {iteracion}\n")
+            self.mostrar_estado_actual()
+
+            # Mostrar la Solucion
+            self.buscar_padres(self.estado_actual)
+            print("\nResumen Algoritmo Better First\n")
+            print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
+            print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
+            print(f"Iteración : {iteracion}\n")
+
+    def add_beam(self, sucesores, b):
+        for estado in sucesores:
+            if b > 0:
+                self.descubiertos.append(estado)
+                self.por_explorar.append(estado)
+                b -= 1
+            else:
+                self.descubiertos.append(estado)
+
+    def algoritmo_beam(self):
+        iteracion = 1
+        b = 2
+        self.estado_actual = self.estado_inicial
+        self.descubiertos.append(self.estado_actual)
+        movimientos = ["UP", "DOWN", "LEFT", "RIGHT"]
+        #movimientos = ["DOWN", "RIGHT", "UP", "LEFT"]
+        #movimientos = ["DOWN","UP", "RIGHT","LEFT"]
+
+        sucesores = []
+        solucion = None
+
+        while not self.es_final():
+            print(f"Iteración : {iteracion}\n")
+            self.mostrar_estado_actual()
+
+            for movimiento in movimientos:
+                estado_temporal = nodo_estado(self.mover_a(movimiento), self.estado_actual, "Mover a " + movimiento, self.estado_actual.get_nivel() + 1)
+                if not estado_temporal.get_valor() == "illegal" and not self.esta_descubierto(estado_temporal):
+                    self.calcular_heuristica(estado_temporal)
+                    sucesores.append(estado_temporal)
+                    if estado_temporal in self.estado_final:
+                        solucion = estado_temporal
+                        break
+                
+            sucesores.sort(key=ordenar_por_heuristica)
+            self.add_beam(sucesores, b)
+            sucesores.clear()
+                
+            print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
+            print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
+
+            #Paso al siguiente estado
+            if solucion is None:
+                self.estado_actual = self.por_explorar.popleft()
+            else:
+                self.estado_actual = solucion
+            iteracion += 1
+
+        # Mostrar el último estado explorado
+        print(f"Iteración : {iteracion}\n")
+        self.mostrar_estado_actual()
+
+        # Mostrar la Solucion
+        self.buscar_padres(self.estado_actual)
+        print("\nResumen Algoritmo Beam\n")
         print(f"Elementos Descubiertos: {len(self.descubiertos)}\n")
         print(f"Elementos Por Explorar: {len(self.por_explorar)}\n")
         print(f"Iteración : {iteracion}\n")
